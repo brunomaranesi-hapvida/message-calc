@@ -64,7 +64,7 @@ export default function CostSummary({ config, result }: Props) {
       {/* Header */}
       <div className="text-center mb-1">
         <div className="font-bold uppercase tracking-wide">
-          {config.journeyName || "Jornada"}
+          {config.journeyName || "Régua"}
         </div>
         <div style={{ color: "#888" }}>Resumo de Custos</div>
       </div>

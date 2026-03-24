@@ -64,7 +64,7 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
             <select
               value={step.channel}
               onChange={(e) => patch({ channel: e.target.value as Channel })}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
             >
               {CHANNELS.map((c) => (
                 <option key={c} value={c}>
@@ -83,7 +83,7 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
               onChange={(e) =>
                 patch({ triggerId: e.target.value || null })
               }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
             >
               <option value="">Nenhum</option>
               {TRIGGERS.map((t) => (
@@ -106,14 +106,14 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
                 onChange={(e) =>
                   patch({ offsetValue: Math.max(0, Number(e.target.value)) })
                 }
-                className="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
               />
               <select
                 value={step.offsetUnit}
                 onChange={(e) =>
                   patch({ offsetUnit: e.target.value as OffsetUnit })
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
               >
                 {OFFSET_UNITS.map((u) => (
                   <option key={u.value} value={u.value}>
@@ -128,7 +128,7 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
                     offsetDirection: e.target.value as OffsetDirection,
                   })
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
               >
                 {OFFSET_DIRS.map((d) => (
                   <option key={d.value} value={d.value}>
@@ -154,7 +154,7 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
                         (e.target.value as Channel) || null,
                     })
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Nenhum</option>
                   {CHANNELS.map((c) => (
@@ -179,7 +179,7 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
                       ),
                     })
                   }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -195,7 +195,7 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
           </button>
           <button
             onClick={() => onSave(step)}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover transition"
           >
             Salvar
           </button>

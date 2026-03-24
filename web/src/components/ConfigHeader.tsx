@@ -5,6 +5,7 @@ import { SimulationConfig } from "@/lib/types";
 interface Props {
   config: SimulationConfig;
   onChange: (patch: Partial<SimulationConfig>) => void;
+  disabled?: boolean;
 }
 
 const MONTHS = [
@@ -22,18 +23,21 @@ const MONTHS = [
   "Dezembro",
 ];
 
-export default function ConfigHeader({ config, onChange }: Props) {
+export default function ConfigHeader({ config, onChange, disabled }: Props) {
+  const inputClass = `w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary ${disabled ? "bg-slate-50 text-slate-500 cursor-not-allowed" : ""}`;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Nome da Jornada
+          Nome da Régua
         </label>
         <input
           type="text"
+          disabled={disabled}
           value={config.journeyName}
           onChange={(e) => onChange({ journeyName: e.target.value })}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={inputClass}
         />
       </div>
       <div>
@@ -43,11 +47,12 @@ export default function ConfigHeader({ config, onChange }: Props) {
         <input
           type="number"
           min={0}
+          disabled={disabled}
           value={config.peopleReached}
           onChange={(e) =>
             onChange({ peopleReached: Math.max(0, Number(e.target.value)) })
           }
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={inputClass}
         />
       </div>
       <div>
@@ -55,9 +60,10 @@ export default function ConfigHeader({ config, onChange }: Props) {
           Mês inicial do disparo
         </label>
         <select
+          disabled={disabled}
           value={config.startMonth}
           onChange={(e) => onChange({ startMonth: Number(e.target.value) })}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={inputClass}
         >
           {MONTHS.map((m, i) => (
             <option key={i} value={i + 1}>
@@ -75,13 +81,14 @@ export default function ConfigHeader({ config, onChange }: Props) {
           min={0}
           max={100}
           step={1}
+          disabled={disabled}
           value={Math.round(config.optInRate * 100)}
           onChange={(e) =>
             onChange({
               optInRate: Math.min(100, Math.max(0, Number(e.target.value))) / 100,
             })
           }
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={inputClass}
         />
         <span className="text-xs text-slate-500">%</span>
       </div>
@@ -94,6 +101,7 @@ export default function ConfigHeader({ config, onChange }: Props) {
           min={0}
           max={100}
           step={1}
+          disabled={disabled}
           value={Math.round(config.deliveryRateWhats * 100)}
           onChange={(e) =>
             onChange({
@@ -101,7 +109,7 @@ export default function ConfigHeader({ config, onChange }: Props) {
                 Math.min(100, Math.max(0, Number(e.target.value))) / 100,
             })
           }
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={inputClass}
         />
         <span className="text-xs text-slate-500">%</span>
       </div>
@@ -114,6 +122,7 @@ export default function ConfigHeader({ config, onChange }: Props) {
           min={0}
           max={100}
           step={1}
+          disabled={disabled}
           value={Math.round(config.deliveryRateSMS * 100)}
           onChange={(e) =>
             onChange({
@@ -121,7 +130,7 @@ export default function ConfigHeader({ config, onChange }: Props) {
                 Math.min(100, Math.max(0, Number(e.target.value))) / 100,
             })
           }
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={inputClass}
         />
         <span className="text-xs text-slate-500">%</span>
       </div>

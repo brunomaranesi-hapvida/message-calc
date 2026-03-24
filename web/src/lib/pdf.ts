@@ -66,7 +66,7 @@ export function generatePDF(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(...COLORS.title);
-  doc.text(config.journeyName || "Jornada", PAGE_LEFT, y);
+  doc.text(config.journeyName || "Régua", PAGE_LEFT, y);
   y += 8;
 
   doc.setFont("helvetica", "normal");

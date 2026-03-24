@@ -11,9 +11,10 @@ import { v4 as uuid } from "uuid";
 interface Props {
   config: SimulationConfig;
   onStepsChange: (steps: Step[]) => void;
+  disabled?: boolean;
 }
 
-export default function StepsTable({ config, onStepsChange }: Props) {
+export default function StepsTable({ config, onStepsChange, disabled }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingStep, setEditingStep] = useState<Step | null>(null);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
@@ -74,7 +75,9 @@ export default function StepsTable({ config, onStepsChange }: Props) {
         <h3 className="text-sm font-semibold text-slate-700">Disparos</h3>
         <button
           onClick={openNew}
-          className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1"
+          disabled={disabled}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover transition flex items-center gap-1 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          title={disabled ? "Régua aprovada não pode ser editada" : undefined}
         >
           <svg
             className="w-4 h-4"
@@ -123,11 +126,11 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                 return (
                   <tr
                     key={step.id}
-                    className="border-t border-slate-100 hover:bg-blue-50/30 transition align-top"
+                    className="border-t border-slate-100 hover:bg-primary-50/30 transition align-top"
                   >
                     <td className="px-4 py-4">
                       <div className="font-semibold text-slate-800">
-                        {editingChannelId === step.id ? (
+                        {!disabled && editingChannelId === step.id ? (
                           <select
                             autoFocus
                             value={step.channel}
@@ -138,7 +141,7 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                               )
                             }
                             onBlur={() => setEditingChannelId(null)}
-                            className="rounded border border-blue-400 px-1.5 py-0.5 text-sm font-semibold focus:ring-1 focus:ring-blue-500"
+                            className="rounded border border-primary-400 px-1.5 py-0.5 text-sm font-semibold focus:ring-1 focus:ring-primary"
                           >
                             {CHANNELS.map((c) => (
                               <option key={c} value={c}>
@@ -146,10 +149,12 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                               </option>
                             ))}
                           </select>
+                        ) : disabled ? (
+                          <span className="text-slate-700">{step.channel}</span>
                         ) : (
                           <button
                             onClick={() => setEditingChannelId(step.id)}
-                            className="text-blue-700 hover:underline"
+                            className="text-primary hover:underline"
                           >
                             {step.channel}
                           </button>
@@ -170,8 +175,9 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => openEdit(step)}
-                          title="Editar"
-                          className="p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-blue-600 transition"
+                          disabled={disabled}
+                          title={disabled ? "Régua aprovada não pode ser editada" : "Editar"}
+                          className={`p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-primary transition ${disabled ? "opacity-30 cursor-not-allowed hover:bg-transparent hover:text-slate-400" : ""}`}
                         >
                           <svg
                             className="w-4 h-4"
@@ -189,8 +195,9 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                         </button>
                         <button
                           onClick={() => handleDuplicate(step)}
-                          title="Duplicar"
-                          className="p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-green-600 transition"
+                          disabled={disabled}
+                          title={disabled ? "Régua aprovada não pode ser editada" : "Duplicar"}
+                          className={`p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-green-600 transition ${disabled ? "opacity-30 cursor-not-allowed hover:bg-transparent hover:text-slate-400" : ""}`}
                         >
                           <svg
                             className="w-4 h-4"
@@ -208,8 +215,9 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                         </button>
                         <button
                           onClick={() => handleDelete(step.id)}
-                          title="Excluir"
-                          className="p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-red-600 transition"
+                          disabled={disabled}
+                          title={disabled ? "Régua aprovada não pode ser editada" : "Excluir"}
+                          className={`p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-red-600 transition ${disabled ? "opacity-30 cursor-not-allowed hover:bg-transparent hover:text-slate-400" : ""}`}
                         >
                           <svg
                             className="w-4 h-4"

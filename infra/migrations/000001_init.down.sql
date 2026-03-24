@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS journeys;
+DROP TABLE IF EXISTS users;

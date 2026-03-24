@@ -1,0 +1,2 @@
+ALTER TABLE journeys
+DROP COLUMN IF EXISTS steps;

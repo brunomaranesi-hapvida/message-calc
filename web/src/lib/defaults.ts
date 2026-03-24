@@ -11,7 +11,7 @@ export const DEFAULT_PROVIDERS: Record<Channel, Provider> = {
 
 export function createDefaultConfig(): SimulationConfig {
   return {
-    journeyName: "Nova Jornada",
+    journeyName: "Nova Régua",
     peopleReached: 100000,
     startMonth: 1,
     providersByChannel: { ...DEFAULT_PROVIDERS },
