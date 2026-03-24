@@ -115,7 +115,7 @@ export default function StepsTable({ config, onStepsChange }: Props) {
               {steps.map((step) => {
                 const sc = computeStepCost(step, config);
 
-                let details = `${formatNumber(sc.volume)} à ${formatUnitPrice(sc.unitPrice)}`;
+                const details = `${formatNumber(sc.volume)} à : ${formatUnitPrice(sc.unitPrice)}`;
                 if (step.fallbackChannel) {
                   details += `  •  Fallback: ${step.fallbackChannel} (${step.fallbackPercentage}%)`;
                 }
@@ -155,7 +155,9 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                           </button>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 mt-1">{details}</p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {details.join("  •  ")}
+                      </p>
                     </td>
                     <td className="px-4 py-4 text-slate-700 flex flex-col">
                       <span>{getTriggerName(step.triggerId)}</span>

@@ -41,16 +41,16 @@ function fmtNum(n: number): string {
 function drawRule(doc: jsPDF, y: number): number {
   doc.setDrawColor(...COLORS.rule);
   doc.setLineWidth(0.4);
-  doc.line(PAGE_LEFT, y, PAGE_RIGHT, y - 3);
-  return y + 8;
+  doc.line(PAGE_LEFT, y, PAGE_RIGHT, y);
+  return y + 6;
 }
 
 function sectionTitle(doc: jsPDF, text: string, y: number): number {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setTextColor(...COLORS.heading);
   doc.text(text, PAGE_LEFT, y);
-  return y + 6;
+  return y + 7;
 }
 
 export function generatePDF(
@@ -230,7 +230,7 @@ export function generatePDF(
   y += 4;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(16);
   doc.setTextColor(...COLORS.title);
   doc.text("TOTAL MÊS", PAGE_LEFT, y);
   doc.text(fmt(result.totalMonthlyCost), PAGE_RIGHT, y, { align: "right" });
@@ -246,7 +246,7 @@ export function generatePDF(
   y += 8;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setTextColor(...COLORS.accent);
   doc.text("PROJEÇÃO 2026", PAGE_LEFT, y);
   doc.text(fmt(result.projection2026), PAGE_RIGHT, y, { align: "right" });

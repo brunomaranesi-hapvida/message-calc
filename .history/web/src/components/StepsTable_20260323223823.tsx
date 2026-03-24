@@ -115,7 +115,7 @@ export default function StepsTable({ config, onStepsChange }: Props) {
               {steps.map((step) => {
                 const sc = computeStepCost(step, config);
 
-                let details = `${formatNumber(sc.volume)} à ${formatUnitPrice(sc.unitPrice)}`;
+                let details = `${formatNumber(sc.volume)} à : ${formatUnitPrice(sc.unitPrice)}`;
                 if (step.fallbackChannel) {
                   details += `  •  Fallback: ${step.fallbackChannel} (${step.fallbackPercentage}%)`;
                 }

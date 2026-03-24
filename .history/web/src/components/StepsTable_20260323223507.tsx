@@ -105,6 +105,7 @@ export default function StepsTable({ config, onStepsChange }: Props) {
               <tr className="bg-slate-50 text-slate-600">
                 <th className="text-left px-4 py-2.5 font-medium">Canal</th>
                 <th className="text-left px-4 py-2.5 font-medium">Gatilho</th>
+                <th className="text-left px-4 py-2.5 font-medium">Offset</th>
                 <th className="text-right px-4 py-2.5 font-medium">Custo</th>
                 <th className="text-center px-4 py-2.5 font-medium w-28">
                   Ações
@@ -115,9 +116,13 @@ export default function StepsTable({ config, onStepsChange }: Props) {
               {steps.map((step) => {
                 const sc = computeStepCost(step, config);
 
-                let details = `${formatNumber(sc.volume)} à ${formatUnitPrice(sc.unitPrice)}`;
+                const details: string[] = [];
+                details.push(`Volume: ${formatNumber(sc.volume)}`);
+                details.push(`Unit: ${formatUnitPrice(sc.unitPrice)}`);
                 if (step.fallbackChannel) {
-                  details += `  •  Fallback: ${step.fallbackChannel} (${step.fallbackPercentage}%)`;
+                  details.push(
+                    `Fallback: ${step.fallbackChannel} (${step.fallbackPercentage}%)`,
+                  );
                 }
 
                 return (
@@ -155,13 +160,16 @@ export default function StepsTable({ config, onStepsChange }: Props) {
                           </button>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 mt-1">{details}</p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {details.join("  •  ")}
+                      </p>
                     </td>
-                    <td className="px-4 py-4 text-slate-700 flex flex-col">
+                    <td className="px-4 py-4 text-slate-700">
                       <span>{getTriggerName(step.triggerId)}</span>
-                      <span className="text-xs text-slate-400 mt-1">
-                        {formatOffset(step)}
-                      </span>
+                      <span className="text-xs text-slate-400">{formatOffset(step)}
+                    </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {formatOffset(step)}
                     </td>
                     <td className="px-4 py-4 text-right font-mono font-semibold text-slate-800">
                       {formatCurrency(sc.cost + sc.fallbackCost)}

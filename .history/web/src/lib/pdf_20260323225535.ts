@@ -41,8 +41,8 @@ function fmtNum(n: number): string {
 function drawRule(doc: jsPDF, y: number): number {
   doc.setDrawColor(...COLORS.rule);
   doc.setLineWidth(0.4);
-  doc.line(PAGE_LEFT, y, PAGE_RIGHT, y - 3);
-  return y + 8;
+  doc.line(PAGE_LEFT, y, PAGE_RIGHT, y);
+  return y + 6;
 }
 
 function sectionTitle(doc: jsPDF, text: string, y: number): number {
@@ -50,7 +50,7 @@ function sectionTitle(doc: jsPDF, text: string, y: number): number {
   doc.setFontSize(13);
   doc.setTextColor(...COLORS.heading);
   doc.text(text, PAGE_LEFT, y);
-  return y + 6;
+  return y + 10;
 }
 
 export function generatePDF(

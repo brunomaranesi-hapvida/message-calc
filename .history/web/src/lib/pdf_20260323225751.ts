@@ -50,7 +50,7 @@ function sectionTitle(doc: jsPDF, text: string, y: number): number {
   doc.setFontSize(13);
   doc.setTextColor(...COLORS.heading);
   doc.text(text, PAGE_LEFT, y);
-  return y + 6;
+  return y + 4;
 }
 
 export function generatePDF(

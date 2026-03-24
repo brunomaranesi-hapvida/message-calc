@@ -41,21 +41,21 @@ function fmtNum(n: number): string {
 function drawRule(doc: jsPDF, y: number): number {
   doc.setDrawColor(...COLORS.rule);
   doc.setLineWidth(0.4);
-  doc.line(PAGE_LEFT, y, PAGE_RIGHT, y - 3);
-  return y + 8;
+  doc.line(PAGE_LEFT, y, PAGE_RIGHT, y);
+  return y + 6;
 }
 
 function sectionTitle(doc: jsPDF, text: string, y: number): number {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setTextColor(...COLORS.heading);
   doc.text(text, PAGE_LEFT, y);
-  return y + 6;
+  return y + 7;
 }
 
 export function generatePDF(
   config: SimulationConfig,
-  result: SimulationResult,
+  result: SimulationResult
 ) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -86,7 +86,7 @@ export function generatePDF(
   doc.text(
     `Volume base: ${fmtNum(config.peopleReached)} pessoas`,
     PAGE_LEFT,
-    y,
+    y
   );
   y += 8;
 
@@ -199,14 +199,14 @@ export function generatePDF(
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
       doc.setTextColor(...COLORS.muted);
-      // doc.text(`Fallback — ${sc.step.fallbackChannel}`, PAGE_LEFT + 4, y);
-      //y += 5;
+      doc.text(`Fallback — ${sc.step.fallbackChannel}`, PAGE_LEFT + 4, y);
+      y += 5;
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(...COLORS.body);
       const fbLine = `${fmtNum(sc.fallbackVolume)} mensagens × ${fmtUnit(sc.fallbackUnitPrice)}`;
-      doc.text(fbLine, PAGE_LEFT, y);
+      doc.text(fbLine, PAGE_LEFT + 4, y);
       doc.setFont("helvetica", "bold");
       doc.text(`= ${fmt(sc.fallbackCost)}`, PAGE_RIGHT, y, {
         align: "right",
@@ -230,12 +230,12 @@ export function generatePDF(
   y += 4;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(16);
   doc.setTextColor(...COLORS.title);
   doc.text("TOTAL MÊS", PAGE_LEFT, y);
   doc.text(fmt(result.totalMonthlyCost), PAGE_RIGHT, y, { align: "right" });
 
-  y += 6;
+  y += 10;
 
   doc.setDrawColor(...COLORS.rule);
   doc.setLineDashPattern([2, 2], 0);
@@ -246,7 +246,7 @@ export function generatePDF(
   y += 8;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setTextColor(...COLORS.accent);
   doc.text("PROJEÇÃO 2026", PAGE_LEFT, y);
   doc.text(fmt(result.projection2026), PAGE_RIGHT, y, { align: "right" });
@@ -259,7 +259,7 @@ export function generatePDF(
   doc.text(
     `${result.monthsRemaining} meses restantes a partir de ${config.startMonth}/${new Date().getFullYear()}`,
     PAGE_LEFT,
-    y,
+    y
   );
 
   y += 12;
@@ -270,9 +270,12 @@ export function generatePDF(
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.muted);
-  doc.text(`Gerado em ${today} — Simulação de custos`, pageWidth / 2, y + 2, {
-    align: "center",
-  });
+  doc.text(
+    `Gerado em ${today} — Simulação de custos`,
+    pageWidth / 2,
+    y + 2,
+    { align: "center" }
+  );
 
   doc.save(`${config.journeyName || "simulacao"}.pdf`);
 }
