@@ -1,6 +1,6 @@
 "use client";
 
-import { SimulationConfig, Channel, Provider, CHANNELS, PROVIDERS } from "@/lib/types";
+import { SimulationConfig, Channel, Provider } from "@/lib/types";
 import { getUnitPrice } from "@/lib/pricing";
 import { formatUnitPrice } from "@/lib/format";
 
@@ -8,9 +8,12 @@ interface Props {
   config: SimulationConfig;
   onProviderChange: (channel: Channel, provider: Provider) => void;
   disabled?: boolean;
+  channels: string[];
+  providers: string[];
+  prices?: Record<string, Record<string, number>>;
 }
 
-export default function ProvidersTab({ config, onProviderChange, disabled }: Props) {
+export default function ProvidersTab({ config, onProviderChange, disabled, channels, providers, prices }: Props) {
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <table className="w-full text-sm">
@@ -24,9 +27,9 @@ export default function ProvidersTab({ config, onProviderChange, disabled }: Pro
           </tr>
         </thead>
         <tbody>
-          {CHANNELS.map((channel) => {
+          {channels.map((channel) => {
             const provider = config.providersByChannel[channel];
-            const price = getUnitPrice(channel, provider);
+            const price = getUnitPrice(channel, provider, prices);
             return (
               <tr
                 key={channel}
@@ -44,7 +47,7 @@ export default function ProvidersTab({ config, onProviderChange, disabled }: Pro
                     }
                     className={`rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary ${disabled ? "bg-slate-50 text-slate-500 cursor-not-allowed" : ""}`}
                   >
-                    {PROVIDERS.map((p) => (
+                    {providers.map((p) => (
                       <option key={p} value={p}>
                         {p}
                       </option>
@@ -52,7 +55,7 @@ export default function ProvidersTab({ config, onProviderChange, disabled }: Pro
                   </select>
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-slate-600">
-                  {formatUnitPrice(price)}
+                  {price > 0 ? formatUnitPrice(price) : "—"}
                 </td>
               </tr>
             );

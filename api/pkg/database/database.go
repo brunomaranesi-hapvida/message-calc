@@ -12,7 +12,15 @@ func Init(databaseURL string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err := db.AutoMigrate(&models.User{}, &models.Journey{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.Journey{},
+		&models.Channel{},
+		&models.Provider{},
+		&models.ProviderChannelPrice{},
+		&models.DefaultProviderConfig{},
+		&models.CalculatorConfig{},
+	); err != nil {
 		return nil, err
 	}
 

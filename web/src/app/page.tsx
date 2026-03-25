@@ -9,12 +9,14 @@ import {
   Suspense,
 } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { SimulationConfig, Channel, Provider, Step } from "@/lib/types";
+import { toast } from "sonner";
+import { SimulationConfig, Channel, Provider, Step, VolumeMode } from "@/lib/types";
 import { createDefaultConfig } from "@/lib/defaults";
 import { runSimulation } from "@/lib/simulation";
 import { generatePDF } from "@/lib/pdf";
 import { Journey, fetchJourneyByCode } from "@/hooks/useJourneys";
+import { useCalculatorConfig } from "@/hooks/useCalculatorConfig";
+import AppNavbar from "@/components/AppNavbar";
 import Header from "@/components/Header";
 import SaveJourneyModal from "@/components/SaveJourneyModal";
 import ConfigHeader from "@/components/ConfigHeader";
@@ -23,8 +25,34 @@ import ProvidersTab from "@/components/ProvidersTab";
 import CostSummary from "@/components/CostSummary";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const BACKOFFICE_URL =
-  process.env.NEXT_PUBLIC_BACKOFFICE_URL || "http://localhost:3001";
+
+function normalizeSteps(steps: Step[]): Step[] {
+  if (!steps.length) return steps;
+  const needsFill = steps.some((s) => !s.volumeMode);
+  if (!needsFill) return steps;
+  const share = Math.round(100 / steps.length);
+  return steps.map((s) => ({
+    ...s,
+    volumeMode: (s.volumeMode || "percentage") as VolumeMode,
+    volumeValue: s.volumeValue ?? share,
+  }));
+}
+
+const STATUS_STYLES: Record<string, { label: string; classes: string }> = {
+  draft:    { label: "Rascunho",  classes: "bg-slate-100 text-slate-700" },
+  pending:  { label: "Pendente",  classes: "bg-yellow-100 text-yellow-700" },
+  approved: { label: "Aprovada",  classes: "bg-green-100 text-green-700" },
+  rejected: { label: "Rejeitada", classes: "bg-red-100 text-red-700" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_STYLES[status] ?? { label: status, classes: "bg-slate-100 text-slate-700" };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${s.classes}`}>
+      {s.label}
+    </span>
+  );
+}
 
 type Tab = "config" | "providers";
 
@@ -38,13 +66,24 @@ export default function Home() {
 
 function HomeInner() {
   const searchParams = useSearchParams();
-  const [config, setConfig] = useState<SimulationConfig>(createDefaultConfig);
+  const { calcConfig, loading: configLoading } = useCalculatorConfig();
+  const [config, setConfig] = useState<SimulationConfig>(() => createDefaultConfig());
   const [tab, setTab] = useState<Tab>("config");
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [journeyMeta, setJourneyMeta] = useState<Journey | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const result = useMemo(() => runSimulation(config), [config]);
+  useEffect(() => {
+    if (!configLoading) {
+      setConfig((prev) => {
+        if (prev.steps.length > 0) return prev;
+        return createDefaultConfig(calcConfig.defaultProviders, calcConfig.defaults);
+      });
+    }
+  }, [configLoading, calcConfig]);
+
+  const result = useMemo(() => runSimulation(config, calcConfig.prices), [config, calcConfig.prices]);
   const isApproved = journeyMeta?.status === "approved";
 
   const patchConfig = useCallback((patch: Partial<SimulationConfig>) => {
@@ -83,6 +122,7 @@ function HomeInner() {
         const data = JSON.parse(
           ev.target?.result as string,
         ) as SimulationConfig;
+        data.steps = normalizeSteps(data.steps);
         setConfig(data);
       } catch {
         alert("Arquivo JSON inválido.");
@@ -114,15 +154,28 @@ function HomeInner() {
       }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const saved: Journey = await res.json();
+    setJourneyMeta(saved);
+    setIsCopied(false);
   };
 
   const handleCopyJourney = () => {
+    if (isCopied) return;
     setConfig((prev) => ({
       ...prev,
       journeyName: `${prev.journeyName} (cópia)`,
+      steps: prev.steps.map((s) => ({ ...s })),
     }));
     setJourneyMeta(null);
+    setIsCopied(true);
     window.history.replaceState(null, "", "/");
+    toast.success("Régua copiada", {
+      description: "Os dados foram copiados. Clique em 'Salvar Régua' para persistir.",
+      duration: 4000,
+    });
+  };
+
+  const handleSaveCopy = () => {
     setSaveModalOpen(true);
   };
 
@@ -139,7 +192,7 @@ function HomeInner() {
           optInRate: j.opt_in_rate,
           deliveryRateWhats: j.wa_delivery,
           deliveryRateSMS: j.sms_delivery,
-          steps: j.steps || [],
+          steps: normalizeSteps(j.steps || []),
         }));
       })
       .catch(() => {
@@ -149,34 +202,14 @@ function HomeInner() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 px-6 py-3">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
-          <Link href="/">
-            <img src="/logo-hapvida.png" alt="Hapvida" className="h-7" />
-          </Link>
-          <div className="flex items-center gap-6 text-sm font-medium">
-            <Link
-              href="/reguas"
-              className="text-slate-600 hover:text-primary transition"
-            >
-              Réguas
-            </Link>
-            <a
-              href={BACKOFFICE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-600 hover:text-primary transition"
-            >
-              Backoffice
-            </a>
-          </div>
-        </div>
-      </nav>
+      <AppNavbar />
 
       <Header
         onSave={() => setSaveModalOpen(true)}
         onCopy={handleCopyJourney}
+        onSaveCopy={handleSaveCopy}
         isApproved={isApproved}
+        isCopied={isCopied}
         onExportPDF={handleExportPDF}
         onExportJSON={handleExportJSON}
         fileInputRef={fileInputRef}
@@ -193,9 +226,7 @@ function HomeInner() {
       {journeyMeta && (
         <div className="bg-primary-50 border-b border-primary-100 px-6 py-2.5">
           <div className="max-w-screen-2xl mx-auto flex items-center gap-4 text-sm">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">
-              Editando régua
-            </span>
+            <StatusBadge status={journeyMeta.status} />
             <span className="text-slate-600">
               Categoria:{" "}
               <span className="font-medium text-slate-800">
@@ -208,20 +239,12 @@ function HomeInner() {
                 {journeyMeta.owner ?? "-"}
               </span>
             </span>
-            {journeyMeta.status === "approved" && journeyMeta.approved_by ? (
+            {journeyMeta.status === "approved" && journeyMeta.approved_by && (
               <span className="text-slate-600">
                 Aprovado por:{" "}
                 <span className="font-medium text-slate-800">
                   {journeyMeta.approved_by}
                 </span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                {journeyMeta.status === "pending"
-                  ? "Pendente"
-                  : journeyMeta.status === "rejected"
-                    ? "Rejeitada"
-                    : journeyMeta.status}
               </span>
             )}
           </div>
@@ -271,7 +294,10 @@ function HomeInner() {
                     <StepsTable
                       config={config}
                       onStepsChange={setSteps}
+                      onImportConfig={setConfig}
                       disabled={isApproved}
+                      channels={calcConfig.channels}
+                      prices={calcConfig.prices}
                     />
                   </>
                 ) : (
@@ -279,6 +305,9 @@ function HomeInner() {
                     config={config}
                     onProviderChange={setProvider}
                     disabled={isApproved}
+                    channels={calcConfig.channels}
+                    providers={calcConfig.providers}
+                    prices={calcConfig.prices}
                   />
                 )}
               </div>
@@ -288,7 +317,7 @@ function HomeInner() {
           {/* Right Panel — Receipt */}
           <div className="shrink-0">
             <div className="sticky top-6">
-              <CostSummary config={config} result={result} />
+              <CostSummary config={config} result={result} prices={calcConfig.prices} />
             </div>
           </div>
         </div>

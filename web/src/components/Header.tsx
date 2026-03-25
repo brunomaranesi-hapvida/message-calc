@@ -5,7 +5,9 @@ import { useState, useRef, useEffect } from "react";
 interface Props {
   onSave: () => void;
   onCopy?: () => void;
+  onSaveCopy?: () => void;
   isApproved?: boolean;
+  isCopied?: boolean;
   onExportPDF: () => void;
   onExportJSON: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -15,7 +17,9 @@ interface Props {
 export default function Header({
   onSave,
   onCopy,
+  onSaveCopy,
   isApproved,
+  isCopied,
   onExportPDF,
   onExportJSON,
   fileInputRef,
@@ -39,6 +43,39 @@ export default function Header({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownOpen]);
 
+  const renderPrimaryAction = () => {
+    if (isCopied) {
+      return (
+        <button
+          onClick={onSaveCopy}
+          className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover transition-all animate-fade-scale-in"
+        >
+          Salvar Régua
+        </button>
+      );
+    }
+
+    if (isApproved) {
+      return (
+        <button
+          onClick={onCopy}
+          className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition"
+        >
+          Copiar Régua
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={onSave}
+        className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover transition"
+      >
+        Salvar Régua
+      </button>
+    );
+  };
+
   return (
     <div className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
@@ -52,26 +89,7 @@ export default function Header({
         </div>
 
         <div className="flex items-center gap-2">
-          {isApproved && (
-            <span className="px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
-              Aprovada
-            </span>
-          )}
-          {isApproved ? (
-            <button
-              onClick={onCopy}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition"
-            >
-              Copiar Régua
-            </button>
-          ) : (
-            <button
-              onClick={onSave}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover transition"
-            >
-              Salvar Régua
-            </button>
-          )}
+          {renderPrimaryAction()}
           <button
             onClick={onExportPDF}
             className="px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 transition"

@@ -1,49 +1,47 @@
-import { SimulationConfig, Step, StepCost, Channel } from "./types";
+import { SimulationConfig, Step, StepCost } from "./types";
 import { getUnitPrice } from "./pricing";
 
-function isHSMChannel(channel: Channel): boolean {
-  return channel === "HSM - Marketing" || channel === "HSM - Utility";
+export function computeVolumeBase(config: SimulationConfig): number {
+  return Math.round(config.peopleReached * config.optInRate);
 }
 
 export function computeStepVolume(
   step: Step,
   config: SimulationConfig
 ): number {
-  const base = config.peopleReached;
-  if (isHSMChannel(step.channel)) {
-    return Math.round(base * config.optInRate * config.deliveryRateWhats);
+  if (step.volumeMode === "absolute") {
+    return Math.round(step.volumeValue);
   }
-  if (step.channel === "SMS") {
-    return Math.round(base * config.deliveryRateSMS);
-  }
-  return base;
+  const base = computeVolumeBase(config);
+  return Math.round(base * (step.volumeValue / 100));
 }
 
 export function computeStepCost(
   step: Step,
-  config: SimulationConfig
+  config: SimulationConfig,
+  prices?: Record<string, Record<string, number>>
 ): StepCost {
   const volume = computeStepVolume(step, config);
   const provider = config.providersByChannel[step.channel];
-  const unitPrice = getUnitPrice(step.channel, provider);
-  const cost = volume * unitPrice;
+  const unitPrice = getUnitPrice(step.channel, provider, prices);
 
   let fallbackVolume = 0;
   let fallbackUnitPrice = 0;
   let fallbackCost = 0;
 
   if (step.fallbackChannel && step.fallbackPercentage > 0) {
-    fallbackVolume = Math.round(
-      config.peopleReached * (step.fallbackPercentage / 100)
-    );
+    fallbackVolume = Math.round(volume * (step.fallbackPercentage / 100));
     const fallbackProvider = config.providersByChannel[step.fallbackChannel];
-    fallbackUnitPrice = getUnitPrice(step.fallbackChannel, fallbackProvider);
+    fallbackUnitPrice = getUnitPrice(step.fallbackChannel, fallbackProvider, prices);
     fallbackCost = fallbackVolume * fallbackUnitPrice;
   }
 
+  const primaryVolume = volume - fallbackVolume;
+  const cost = primaryVolume * unitPrice;
+
   return {
     step,
-    volume,
+    volume: primaryVolume,
     unitPrice,
     cost,
     fallbackVolume,
@@ -62,8 +60,11 @@ export interface SimulationResult {
   projection2026: number;
 }
 
-export function runSimulation(config: SimulationConfig): SimulationResult {
-  const stepCosts = config.steps.map((s) => computeStepCost(s, config));
+export function runSimulation(
+  config: SimulationConfig,
+  prices?: Record<string, Record<string, number>>
+): SimulationResult {
+  const stepCosts = config.steps.map((s) => computeStepCost(s, config, prices));
 
   const costPerChannel: Record<string, number> = {};
   const messagesPerChannel: Record<string, number> = {};

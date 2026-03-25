@@ -8,7 +8,7 @@ import (
 func CORS() echo.MiddlewareFunc {
 	return middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"http://localhost:3000", "http://localhost:3001"},
-		AllowMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{"Content-Type", "Authorization"},
 	})
 }

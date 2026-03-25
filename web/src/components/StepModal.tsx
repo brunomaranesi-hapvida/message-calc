@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Step, Channel, CHANNELS, OffsetUnit, OffsetDirection } from "@/lib/types";
+import { useState, useEffect, useMemo } from "react";
+import { Step, Channel, SimulationConfig, OffsetUnit, OffsetDirection, VolumeMode } from "@/lib/types";
 import { TRIGGERS } from "@/lib/triggers";
+import { getUnitPrice } from "@/lib/pricing";
+import { formatCurrency, formatNumber, formatUnitPrice } from "@/lib/format";
 import { v4 as uuid } from "uuid";
 
 interface Props {
@@ -10,6 +12,9 @@ interface Props {
   initial?: Step | null;
   onSave: (step: Step) => void;
   onClose: () => void;
+  channels?: string[];
+  config: SimulationConfig;
+  prices?: Record<string, Record<string, number>>;
 }
 
 const OFFSET_UNITS: { value: OffsetUnit; label: string }[] = [
@@ -31,12 +36,14 @@ function emptyStep(): Step {
     offsetValue: 0,
     offsetUnit: "days",
     offsetDirection: "after",
+    volumeMode: "percentage",
+    volumeValue: 100,
     fallbackChannel: null,
     fallbackPercentage: 0,
   };
 }
 
-export default function StepModal({ open, initial, onSave, onClose }: Props) {
+export default function StepModal({ open, initial, onSave, onClose, channels, config, prices }: Props) {
   const [step, setStep] = useState<Step>(emptyStep());
 
   useEffect(() => {
@@ -44,6 +51,33 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
       setStep(initial ? { ...initial } : emptyStep());
     }
   }, [open, initial]);
+
+  const costHints = useMemo(() => {
+    const base = Math.round(config.peopleReached * config.optInRate);
+    const provider = config.providersByChannel[step.channel];
+    const unitPrice = getUnitPrice(step.channel, provider, prices);
+
+    const totalVolume =
+      step.volumeMode === "percentage"
+        ? Math.round(base * (step.volumeValue / 100))
+        : Math.round(step.volumeValue);
+
+    let fallbackVolume = 0;
+    let fallbackUnitPrice = 0;
+    let fallbackCost = 0;
+
+    if (step.fallbackChannel && step.fallbackPercentage > 0) {
+      fallbackVolume = Math.round(totalVolume * (step.fallbackPercentage / 100));
+      const fbProvider = config.providersByChannel[step.fallbackChannel];
+      fallbackUnitPrice = getUnitPrice(step.fallbackChannel, fbProvider, prices);
+      fallbackCost = fallbackVolume * fallbackUnitPrice;
+    }
+
+    const primaryVolume = totalVolume - fallbackVolume;
+    const primaryCost = primaryVolume * unitPrice;
+
+    return { unitPrice, totalVolume, primaryVolume, primaryCost, fallbackVolume, fallbackUnitPrice, fallbackCost };
+  }, [step.channel, step.volumeMode, step.volumeValue, step.fallbackChannel, step.fallbackPercentage, config, prices]);
 
   if (!open) return null;
 
@@ -66,12 +100,17 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
               onChange={(e) => patch({ channel: e.target.value as Channel })}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
             >
-              {CHANNELS.map((c) => (
+              {(channels ?? []).map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
               ))}
             </select>
+            <p className="mt-1 text-xs text-slate-400">
+              {costHints.unitPrice > 0
+                ? <>{formatUnitPrice(costHints.unitPrice)} por mensagem</>
+                : "Sem preço configurado"}
+            </p>
           </div>
 
           <div>
@@ -139,6 +178,47 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Volume
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={step.volumeMode}
+                onChange={(e) =>
+                  patch({ volumeMode: e.target.value as VolumeMode })
+                }
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+              >
+                <option value="percentage">Percentual (%)</option>
+                <option value="absolute">Quantidade</option>
+              </select>
+              <input
+                type="number"
+                min={0}
+                max={step.volumeMode === "percentage" ? 100 : undefined}
+                value={step.volumeValue}
+                onChange={(e) => {
+                  const v = Math.max(0, Number(e.target.value));
+                  patch({
+                    volumeValue:
+                      step.volumeMode === "percentage" ? Math.min(100, v) : v,
+                  });
+                }}
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                placeholder={
+                  step.volumeMode === "percentage"
+                    ? "% do público"
+                    : "Quantidade de pessoas"
+                }
+              />
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              {formatNumber(costHints.totalVolume)} envios estimados
+              {costHints.unitPrice > 0 && <> &bull; {formatCurrency(costHints.primaryCost)}</>}
+            </p>
+          </div>
+
           <div className="border-t border-slate-200 pt-4">
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Fallback
@@ -157,7 +237,7 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Nenhum</option>
-                  {CHANNELS.map((c) => (
+                  {(channels ?? []).map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
@@ -183,6 +263,12 @@ export default function StepModal({ open, initial, onSave, onClose }: Props) {
                 />
               </div>
             </div>
+            {step.fallbackChannel && step.fallbackPercentage > 0 && (
+              <p className="mt-1 text-xs text-slate-400">
+                {formatNumber(costHints.fallbackVolume)} envios fallback
+                {costHints.fallbackUnitPrice > 0 && <> &bull; {formatCurrency(costHints.fallbackCost)}</>}
+              </p>
+            )}
           </div>
         </div>
 

@@ -1,20 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { Step, Channel, CHANNELS, SimulationConfig } from "@/lib/types";
+import { Step, Channel, SimulationConfig } from "@/lib/types";
 import { TRIGGERS } from "@/lib/triggers";
 import { computeStepCost } from "@/lib/simulation";
 import { formatCurrency, formatNumber, formatUnitPrice } from "@/lib/format";
 import StepModal from "./StepModal";
+import ImportDropzone from "./ImportDropzone";
 import { v4 as uuid } from "uuid";
 
 interface Props {
   config: SimulationConfig;
   onStepsChange: (steps: Step[]) => void;
+  onImportConfig?: (config: SimulationConfig) => void;
   disabled?: boolean;
+  channels?: string[];
+  prices?: Record<string, Record<string, number>>;
 }
 
-export default function StepsTable({ config, onStepsChange, disabled }: Props) {
+export default function StepsTable({
+  config,
+  onStepsChange,
+  onImportConfig,
+  disabled,
+  channels,
+  prices,
+}: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingStep, setEditingStep] = useState<Step | null>(null);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
@@ -97,10 +108,14 @@ export default function StepsTable({ config, onStepsChange, disabled }: Props) {
       </div>
 
       {steps.length === 0 ? (
-        <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-lg">
-          Nenhum disparo configurado. Clique em &quot;Adicionar&quot; para
-          começar.
-        </div>
+        onImportConfig ? (
+          <ImportDropzone onImport={onImportConfig} disabled={disabled} />
+        ) : (
+          <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-lg">
+            Nenhum disparo configurado. Clique em &quot;Adicionar&quot; para
+            começar.
+          </div>
+        )
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full text-sm">
@@ -118,7 +133,11 @@ export default function StepsTable({ config, onStepsChange, disabled }: Props) {
               {steps.map((step) => {
                 const sc = computeStepCost(step, config);
 
-                let details = `${formatNumber(sc.volume)} à ${formatUnitPrice(sc.unitPrice)}`;
+                const volLabel =
+                  step.volumeMode === "percentage"
+                    ? `${formatNumber(sc.volume)} (${step.volumeValue}% da base)`
+                    : formatNumber(sc.volume);
+                let details = `${volLabel} à ${formatUnitPrice(sc.unitPrice)}`;
                 if (step.fallbackChannel) {
                   details += `  •  Fallback: ${step.fallbackChannel} (${step.fallbackPercentage}%)`;
                 }
@@ -143,7 +162,7 @@ export default function StepsTable({ config, onStepsChange, disabled }: Props) {
                             onBlur={() => setEditingChannelId(null)}
                             className="rounded border border-primary-400 px-1.5 py-0.5 text-sm font-semibold focus:ring-1 focus:ring-primary"
                           >
-                            {CHANNELS.map((c) => (
+                            {(channels ?? []).map((c) => (
                               <option key={c} value={c}>
                                 {c}
                               </option>
@@ -176,7 +195,11 @@ export default function StepsTable({ config, onStepsChange, disabled }: Props) {
                         <button
                           onClick={() => openEdit(step)}
                           disabled={disabled}
-                          title={disabled ? "Régua aprovada não pode ser editada" : "Editar"}
+                          title={
+                            disabled
+                              ? "Régua aprovada não pode ser editada"
+                              : "Editar"
+                          }
                           className={`p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-primary transition ${disabled ? "opacity-30 cursor-not-allowed hover:bg-transparent hover:text-slate-400" : ""}`}
                         >
                           <svg
@@ -196,7 +219,11 @@ export default function StepsTable({ config, onStepsChange, disabled }: Props) {
                         <button
                           onClick={() => handleDuplicate(step)}
                           disabled={disabled}
-                          title={disabled ? "Régua aprovada não pode ser editada" : "Duplicar"}
+                          title={
+                            disabled
+                              ? "Régua aprovada não pode ser editada"
+                              : "Duplicar"
+                          }
                           className={`p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-green-600 transition ${disabled ? "opacity-30 cursor-not-allowed hover:bg-transparent hover:text-slate-400" : ""}`}
                         >
                           <svg
@@ -216,7 +243,11 @@ export default function StepsTable({ config, onStepsChange, disabled }: Props) {
                         <button
                           onClick={() => handleDelete(step.id)}
                           disabled={disabled}
-                          title={disabled ? "Régua aprovada não pode ser editada" : "Excluir"}
+                          title={
+                            disabled
+                              ? "Régua aprovada não pode ser editada"
+                              : "Excluir"
+                          }
                           className={`p-1.5 rounded hover:bg-slate-200 text-slate-400 hover:text-red-600 transition ${disabled ? "opacity-30 cursor-not-allowed hover:bg-transparent hover:text-slate-400" : ""}`}
                         >
                           <svg
@@ -248,6 +279,9 @@ export default function StepsTable({ config, onStepsChange, disabled }: Props) {
         initial={editingStep}
         onSave={handleSave}
         onClose={() => setModalOpen(false)}
+        channels={channels}
+        config={config}
+        prices={prices}
       />
     </div>
   );

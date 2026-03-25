@@ -10,7 +10,6 @@ interface Props {
 }
 
 export default function SaveJourneyModal({ open, defaultName, onClose, onSave }: Props) {
-  const [name, setName] = useState(defaultName);
   const [category, setCategory] = useState("");
   const [owner, setOwner] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,8 +32,7 @@ export default function SaveJourneyModal({ open, defaultName, onClose, onSave }:
 
     setLoading(true);
     try {
-      await onSave({ name: name.trim() || defaultName, category: category.trim(), owner: owner.trim() });
-      setName(defaultName);
+      await onSave({ name: defaultName, category: category.trim(), owner: owner.trim() });
       setCategory("");
       setOwner("");
       onClose();
@@ -56,9 +54,9 @@ export default function SaveJourneyModal({ open, defaultName, onClose, onSave }:
             <label className="block text-sm font-medium text-slate-700 mb-1">Nome</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              value={defaultName}
+              readOnly
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-default"
             />
           </div>
 

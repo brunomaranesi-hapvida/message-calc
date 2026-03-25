@@ -8,6 +8,7 @@ import { getUnitPrice } from "@/lib/pricing";
 interface Props {
   config: SimulationConfig;
   result: SimulationResult;
+  prices?: Record<string, Record<string, number>>;
 }
 
 function Sep() {
@@ -46,7 +47,7 @@ function Row({
   );
 }
 
-export default function CostSummary({ config, result }: Props) {
+export default function CostSummary({ config, result, prices }: Props) {
   const activeChannels = Object.keys(result.messagesPerChannel);
 
   return (
@@ -75,14 +76,8 @@ export default function CostSummary({ config, result }: Props) {
       {activeChannels.length > 0 && (
         <>
           {activeChannels.map((ch) => {
-            const provider =
-              config.providersByChannel[
-                ch as keyof typeof config.providersByChannel
-              ];
-            const price = getUnitPrice(
-              ch as keyof typeof config.providersByChannel,
-              provider,
-            );
+            const provider = config.providersByChannel[ch];
+            const price = getUnitPrice(ch, provider, prices);
             return <Row key={ch} left={ch} right={formatUnitPrice(price)} />;
           })}
           <Sep />

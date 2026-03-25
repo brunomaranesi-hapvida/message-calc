@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
+import DataTable, { Column } from "@/components/DataTable";
+import { ApproveButton, RejectButton, DeleteButton } from "@/components/ActionIcons";
 import { getJourneys, deleteJourney, approveJourney, rejectJourney } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
@@ -46,10 +48,27 @@ export default function JourneysPage() {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
 
+  const [filterName, setFilterName] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  const categories = useMemo(() => {
+    const set = new Set(journeys.map((j) => j.category).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [journeys]);
+
+  const filtered = useMemo(() => {
+    return journeys.filter((j) => {
+      if (filterName && !j.name.toLowerCase().includes(filterName.toLowerCase())) return false;
+      if (filterCategory && j.category !== filterCategory) return false;
+      if (filterStatus && j.status !== filterStatus) return false;
+      return true;
+    });
+  }, [journeys, filterName, filterCategory, filterStatus]);
+
   async function load() {
     try {
-      const data = await getJourneys();
-      setJourneys(data);
+      setJourneys(await getJourneys());
     } catch {
       setJourneys([]);
     } finally {
@@ -57,44 +76,42 @@ export default function JourneysPage() {
     }
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function handleApprove(code: string) {
-    if (!confirm("Aprovar esta régua?")) return;
+    if (!confirm("Aprovar esta regua?")) return;
     setActing(code);
     try {
       const updated = await approveJourney(code, getEmailFromToken());
       setJourneys((prev) => prev.map((j) => (j.code === code ? updated : j)));
     } catch {
-      alert("Erro ao aprovar régua.");
+      alert("Erro ao aprovar regua.");
     } finally {
       setActing(null);
     }
   }
 
   async function handleReject(code: string) {
-    if (!confirm("Rejeitar esta régua?")) return;
+    if (!confirm("Rejeitar esta regua?")) return;
     setActing(code);
     try {
       const updated = await rejectJourney(code, getEmailFromToken());
       setJourneys((prev) => prev.map((j) => (j.code === code ? updated : j)));
     } catch {
-      alert("Erro ao rejeitar régua.");
+      alert("Erro ao rejeitar regua.");
     } finally {
       setActing(null);
     }
   }
 
   async function handleDelete(code: string) {
-    if (!confirm(`Excluir a régua "${code}"?`)) return;
+    if (!confirm(`Excluir a regua "${code}"?`)) return;
     setActing(code);
     try {
       await deleteJourney(code);
       setJourneys((prev) => prev.filter((j) => j.code !== code));
     } catch {
-      alert("Erro ao excluir régua.");
+      alert("Erro ao excluir regua.");
     } finally {
       setActing(null);
     }
@@ -108,90 +125,123 @@ export default function JourneysPage() {
     });
   }
 
+  const columns: Column<Journey>[] = [
+    {
+      key: "name",
+      label: "Nome",
+      sortable: true,
+      render: (j) => <span className="text-slate-900 font-medium">{j.name}</span>,
+    },
+    {
+      key: "category",
+      label: "Categoria",
+      sortable: true,
+      sortValue: (j) => j.category ?? "",
+      render: (j) => <span className="text-slate-700">{j.category ?? "-"}</span>,
+    },
+    {
+      key: "owner",
+      label: "Owner",
+      sortable: true,
+      sortValue: (j) => j.owner ?? "",
+      render: (j) => <span className="text-slate-700">{j.owner ?? "-"}</span>,
+    },
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      align: "center",
+      render: (j) => (
+        <span
+          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASS[j.status] ?? "bg-slate-100 text-slate-600"}`}
+        >
+          {STATUS_LABEL[j.status] ?? j.status}
+        </span>
+      ),
+    },
+    {
+      key: "approved_by",
+      label: "Aprovado por",
+      sortable: true,
+      sortValue: (j) => j.approved_by ?? "",
+      render: (j) => <span className="text-slate-500 text-xs">{j.approved_by ?? "-"}</span>,
+    },
+    {
+      key: "created_at",
+      label: "Criado em",
+      sortable: true,
+      render: (j) => <span className="text-slate-500">{formatDate(j.created_at)}</span>,
+    },
+    {
+      key: "actions",
+      label: "Acoes",
+      align: "center",
+      headerClassName: "w-28",
+      render: (j) => {
+        const isPending = j.status === "pending";
+        const isActing = acting === j.code;
+        return (
+          <div className="flex items-center justify-center gap-1">
+            {isPending && (
+              <>
+                <ApproveButton onClick={() => handleApprove(j.code)} disabled={isActing} />
+                <RejectButton onClick={() => handleReject(j.code)} disabled={isActing} />
+              </>
+            )}
+            <DeleteButton onClick={() => handleDelete(j.code)} disabled={isActing} />
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 bg-slate-50 p-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-6">Réguas</h1>
+      <main className="flex-1 bg-slate-50 overflow-y-auto p-8">
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">Reguas</h1>
+
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <input
+            type="text"
+            placeholder="Buscar por nome"
+            value={filterName}
+            onChange={(e) => setFilterName(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary w-56"
+          />
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Todas as categorias</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Todos os status</option>
+            <option value="pending">Pendente</option>
+            <option value="approved">Aprovada</option>
+            <option value="rejected">Rejeitada</option>
+          </select>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-slate-500">Carregando...</p>
           </div>
-        ) : journeys.length === 0 ? (
-          <div className="rounded-xl bg-white p-12 text-center border border-slate-200 shadow-sm">
-            <p className="text-slate-500">Nenhuma régua encontrada.</p>
-          </div>
         ) : (
-          <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-5 py-3 font-medium text-slate-500">Nome</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Categoria</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Owner</th>
-                  <th className="px-5 py-3 font-medium text-slate-500 text-center">Status</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Aprovado por</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Criado em</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {journeys.map((j) => {
-                  const isPending = j.status === "pending";
-                  const isActing = acting === j.code;
-
-                  return (
-                    <tr key={j.code} className="hover:bg-slate-50">
-                      <td className="px-5 py-4 text-slate-900 font-medium">{j.name}</td>
-                      <td className="px-5 py-4 text-slate-700">{j.category ?? "-"}</td>
-                      <td className="px-5 py-4 text-slate-700">{j.owner ?? "-"}</td>
-                      <td className="px-5 py-4 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASS[j.status] ?? "bg-slate-100 text-slate-600"}`}
-                        >
-                          {STATUS_LABEL[j.status] ?? j.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-slate-500 text-xs">
-                        {j.approved_by ?? "-"}
-                      </td>
-                      <td className="px-5 py-4 text-slate-500">{formatDate(j.created_at)}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
-                          {isPending && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(j.code)}
-                                disabled={isActing}
-                                className="text-green-600 hover:text-green-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                              >
-                                Aprovar
-                              </button>
-                              <button
-                                onClick={() => handleReject(j.code)}
-                                disabled={isActing}
-                                className="text-orange-600 hover:text-orange-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                              >
-                                Rejeitar
-                              </button>
-                            </>
-                          )}
-                          <button
-                            onClick={() => handleDelete(j.code)}
-                            disabled={isActing}
-                            className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={filtered}
+            keyExtractor={(j) => j.code}
+            emptyMessage="Nenhuma regua encontrada."
+          />
         )}
       </main>
     </div>
